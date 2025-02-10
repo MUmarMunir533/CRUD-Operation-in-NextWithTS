@@ -2,8 +2,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+// Define the type for the interpretation object
+interface Interpretation {
+  term: string;
+  interpretation: string;
+}
+
 export default function Home() {
-  const [interpretations, setInterpretations] = useState<any[]>([]);
+  // Use the specific type for the state
+  const [interpretations, setInterpretations] = useState<Interpretation[]>([]);
 
   useEffect(() => {
     const savedInterpretations = JSON.parse(
