@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-
+import ReactQueryProvider from "../../components/provider/ReactQueryProvider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -40,8 +40,9 @@ export default function RootLayout({
               Add New
             </Link>
           </header>
-
-          <main className="p-4 text-lg">{children}</main>
+          <ReactQueryProvider>
+            <main className="p-4 text-lg">{children}</main>
+          </ReactQueryProvider>
         </div>
       </body>
     </html>

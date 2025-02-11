@@ -1,47 +1,75 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter, useParams } from "next/navigation";
+
+
+const fetchInterpretation = (id: number) => {
+  const data = JSON.parse(localStorage.getItem("interpretations") || "[]");
+  return data.find((item: { id: number }) => item.id === id);
+};
+
+
+const updateInterpretation = (updatedInterpretation: {
+  id: number;
+  term: string;
+  interpretation: string;
+}): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    try {
+      const data = JSON.parse(localStorage.getItem("interpretations") || "[]");
+      const index = data.findIndex(
+        (item: { id: number }) => item.id === updatedInterpretation.id
+      );
+      if (index !== -1) {
+        data[index] = updatedInterpretation;
+        localStorage.setItem("interpretations", JSON.stringify(data));
+        resolve();
+      } else {
+        reject("Interpretation not found");
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 
 export default function EditPage() {
-  const [term, setTerm] = useState<string>("");
-  const [interpretation, setInterpretation] = useState<string>("");
-  const [index, setIndex] = useState<number | null>(null);
-
+  const { id } = useParams();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
-  useEffect(() => {
-    const queryIndex = window.location.pathname.split("/").pop();
-    const idx = queryIndex ? parseInt(queryIndex) : null;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["interpretation", id],
+    queryFn: () => fetchInterpretation(Number(id)),
+  });
 
-    if (idx !== null) {
-      const savedInterpretations = JSON.parse(
-        localStorage.getItem("interpretations") || "[]"
-      );
-      if (savedInterpretations[idx]) {
-        setTerm(savedInterpretations[idx].term);
-        setInterpretation(savedInterpretations[idx].interpretation);
-        setIndex(idx);
-      }
-    }
-  }, []);
+  const mutation = useMutation<
+    void,
+    Error,
+    { id: number; term: string; interpretation: string }
+  >({
+    mutationFn: updateInterpretation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interpretation", id] });
+      router.push("/");
+    },
+    onError: (error) => {
+      console.error("Error updating interpretation:", error);
+    },
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error loading data</div>;
+  if (!data) return <div>No data found</div>;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (index !== null) {
-      const updatedInterpretation = { term, interpretation };
-      const savedInterpretations = JSON.parse(
-        localStorage.getItem("interpretations") || "[]"
-      );
-      savedInterpretations[index] = updatedInterpretation;
-      localStorage.setItem(
-        "interpretations",
-        JSON.stringify(savedInterpretations)
-      );
-
-      router.push("/");
-    }
+    mutation.mutate({
+      id: Number(id),
+      term: data.term,
+      interpretation: data.interpretation,
+    });
   };
 
   return (
@@ -51,16 +79,16 @@ export default function EditPage() {
         <input
           type="text"
           name="term"
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
+          defaultValue={data.term}
+          onChange={(e) => (data.term = e.target.value)}
           placeholder="Term"
           className="py-1 px-4 border rounded-md"
         />
         <textarea
           name="interpretation"
-          value={interpretation}
-          onChange={(e) => setInterpretation(e.target.value)}
           rows={4}
+          defaultValue={data.interpretation}
+          onChange={(e) => (data.interpretation = e.target.value)}
           placeholder="Interpretation"
           className="py-1 px-4 border rounded-md resize-none"
         ></textarea>
@@ -71,6 +99,17 @@ export default function EditPage() {
           Update Interpretation
         </button>
       </form>
+
+      {mutation.isPending && <p>Updating...</p>}
+      {mutation.isError && (
+        <p>
+          Error:{" "}
+          {mutation.error instanceof Error
+            ? mutation.error.message
+            : "Unknown error"}
+        </p>
+      )}
+      {mutation.isSuccess && <p>Interpretation updated successfully!</p>}
     </div>
   );
 }

@@ -1,47 +1,51 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation"; 
 
-interface Interpretation {
-  id: number;
-  term: string;
-  interpretation: string;
-}
+const saveInterpretation = (data: { term: string; interpretation: string }) => {
+  return new Promise<void>((resolve, reject) => {
+    try {
+      const existingData = JSON.parse(localStorage.getItem("interpretations") || "[]");
+
+      const newInterpretation = {
+        id: Date.now(),
+        term: data.term,
+        interpretation: data.interpretation,
+      };
+
+      const updatedData = [...existingData, newInterpretation];
+      localStorage.setItem("interpretations", JSON.stringify(updatedData));
+
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 
 export default function CreatePage() {
-  const [term, setTerm] = useState<string>("");
-  const [interpretation, setInterpretation] = useState<string>("");
   const router = useRouter();
 
-  const handleSubmit = (e: FormEvent) => {
+  const mutation = useMutation({
+    mutationFn: saveInterpretation,
+    onSuccess: () => {
+      router.push("/");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!term.trim() || !interpretation.trim()) {
+    const term = (e.target as HTMLFormElement).term.value;
+    const interpretation = (e.target as HTMLFormElement).interpretation.value;
+
+    if (!term || !interpretation) {
       alert("Both fields are required!");
       return;
     }
 
-    const newInterpretation: Interpretation = {
-      id: Date.now(),
-      term,
-      interpretation,
-    };
-
-    const savedInterpretations: Interpretation[] = JSON.parse(
-      localStorage.getItem("interpretations") || "[]"
-    );
-
-    const updatedInterpretations = [...savedInterpretations, newInterpretation];
-    localStorage.setItem(
-      "interpretations",
-      JSON.stringify(updatedInterpretations)
-    );
-
-    setTerm("");
-    setInterpretation("");
-
-    router.push("/");
+    mutation.mutate({ term, interpretation });
   };
 
   return (
@@ -51,15 +55,11 @@ export default function CreatePage() {
         <input
           type="text"
           name="term"
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
           placeholder="Term"
           className="py-1 px-4 border rounded-md"
         />
         <textarea
           name="interpretation"
-          value={interpretation}
-          onChange={(e) => setInterpretation(e.target.value)}
           rows={4}
           placeholder="Interpretation"
           className="py-1 px-4 border rounded-md resize-none"
@@ -71,6 +71,10 @@ export default function CreatePage() {
           Add Interpretation
         </button>
       </form>
+
+      {mutation.isPending && <p>Loading...</p>}
+      {mutation.isError && <p>Error: {mutation.error.message}</p>}
+      {mutation.isSuccess && <p>Interpretation added successfully!</p>}
     </div>
   );
 }
