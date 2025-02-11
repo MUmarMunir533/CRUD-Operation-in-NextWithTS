@@ -2,14 +2,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// Define the type for the interpretation object
 interface Interpretation {
   term: string;
   interpretation: string;
 }
 
 export default function Home() {
-  // Use the specific type for the state
+  
   const [interpretations, setInterpretations] = useState<Interpretation[]>([]);
 
   useEffect(() => {
@@ -28,7 +27,7 @@ export default function Home() {
             <div>{item.interpretation}</div>
             <div className="flex gap-4 mt-4 justify-end">
               <Link
-                href={`/edit/${index}`} 
+                href={`/edit/${index}`}
                 className="bg-green-600 font-bold px-4 py-2 rounded-md uppercase text-sm tracking-widest"
               >
                 Edit

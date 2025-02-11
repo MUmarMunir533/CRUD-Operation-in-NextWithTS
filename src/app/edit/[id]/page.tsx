@@ -1,23 +1,22 @@
-'use client'; 
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function EditPage() {
-  const [term, setTerm] = useState<string>('');
-  const [interpretation, setInterpretation] = useState<string>('');
+  const [term, setTerm] = useState<string>("");
+  const [interpretation, setInterpretation] = useState<string>("");
   const [index, setIndex] = useState<number | null>(null);
 
   const router = useRouter();
 
   useEffect(() => {
-    
-    const queryIndex = window.location.pathname.split('/').pop();
+    const queryIndex = window.location.pathname.split("/").pop();
     const idx = queryIndex ? parseInt(queryIndex) : null;
-    
+
     if (idx !== null) {
       const savedInterpretations = JSON.parse(
-        localStorage.getItem('interpretations') || '[]'
+        localStorage.getItem("interpretations") || "[]"
       );
       if (savedInterpretations[idx]) {
         setTerm(savedInterpretations[idx].term);
@@ -33,13 +32,15 @@ export default function EditPage() {
     if (index !== null) {
       const updatedInterpretation = { term, interpretation };
       const savedInterpretations = JSON.parse(
-        localStorage.getItem('interpretations') || '[]'
+        localStorage.getItem("interpretations") || "[]"
       );
       savedInterpretations[index] = updatedInterpretation;
-      localStorage.setItem('interpretations', JSON.stringify(savedInterpretations));
+      localStorage.setItem(
+        "interpretations",
+        JSON.stringify(savedInterpretations)
+      );
 
-      
-      router.push('/');
+      router.push("/");
     }
   };
 

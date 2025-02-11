@@ -40,6 +40,7 @@ export default function RootLayout({
               Add New
             </Link>
           </header>
+
           <main className="p-4 text-lg">{children}</main>
         </div>
       </body>
